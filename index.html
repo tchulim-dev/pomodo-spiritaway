@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pomodoro - A Viagem de Chihiro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 25%, #0f3460 50%, #1a1a2e 75%, #16213e 100%);
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+            transition: background-image 0.5s ease;
+        }
+
+        body.has-background::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Fundo animado com água */
+        .background-water {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 40%;
+            background: linear-gradient(180deg, rgba(31, 142, 144, 0.3) 0%, rgba(25, 118, 120, 0.5) 50%, rgba(20, 90, 95, 0.7) 100%);
+            z-index: 0;
+            animation: waterFlow 8s ease-in-out infinite;
+        }
+
+        @keyframes waterFlow {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        /* Partículas flutuantes */
+        .particle {
+            position: fixed;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .particle-small {
+            width: 4px;
+            height: 4px;
+            background: rgba(212, 175, 55, 0.6);
+            border-radius: 50%;
+            box-shadow: 0 0 8px rgba(212, 175, 55, 0.8);
+        }
+
+        .particle-float {
+            animation: float-up 6s ease-in infinite;
+        }
+
+        @keyframes float-up {
+            0% {
+                transform: translateY(0) translateX(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) translateX(50px);
+                opacity: 0;
+            }
+        }
+
+        /* Container principal */
+        .container {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        /* Header */
+        .header {
+            margin-bottom: 40px;
+            color: #D4AF37;
+            text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+            letter-spacing: 3px;
+        }
+
+        .header p {
+            font-size: 0.95em;
+            color: #A0A0A0;
+            font-style: italic;
+        }
+
+        /* Card principal */
+        .card {
+            background: linear-gradient(135deg, rgba(139, 0, 0, 0.3) 0%, rgba(102, 51, 153, 0.2) 100%);
+            border: 2px solid #D4AF37;
+            border-radius: 20px;
+            padding: 50px 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 60px rgba(212, 175, 55, 0.1),
+                        inset 0 0 20px rgba(212, 175, 55, 0.05);
+            margin-bottom: 30px;
+        }
+
+        /* Lanternas decorativas */
+        .lantern-top-left, .lantern-top-right {
+            position: absolute;
+            width: 30px;
+            height: 40px;
+            background: #8B0000;
+            border: 2px solid #D4AF37;
+            border-radius: 5px;
+            top: 20px;
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.6), inset 0 0 10px rgba(255, 200, 0, 0.3);
+        }
+
+        .lantern-top-left {
+            left: 20px;
+            animation: sway 4s ease-in-out infinite;
+        }
+
+        .lantern-top-right {
+            right: 20px;
+            animation: sway 4s ease-in-out infinite 0.2s;
+        }
+
+        .lantern-top-left::before, .lantern-top-right::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 3px;
+            background: #D4AF37;
+            top: -8px;
+        }
+
+        @keyframes sway {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(2deg); }
+            75% { transform: rotate(-2deg); }
+        }
+
+        /* Timer display */
+        .timer-display {
+            font-size: 4.5em;
+            font-weight: 300;
+            color: #D4AF37;
+            margin: 30px 0;
+            font-family: 'Monaco', 'Courier New', monospace;
+            text-shadow: 0 0 30px rgba(212, 175, 55, 0.6);
+            letter-spacing: 8px;
+        }
+
+        .timer-label {
+            font-size: 1.2em;
+            color: #A0A0A0;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* Status atual */
+        .status {
+            font-size: 1.1em;
+            color: #A0A0A0;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+
+        /* Progress bar dos ciclos */
+        .cycles-progress {
+            margin: 30px 0;
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .cycle-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: rgba(212, 175, 55, 0.2);
+            border: 2px solid #D4AF37;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .cycle-dot.active {
+            background: #D4AF37;
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.8);
+            transform: scale(1.2);
+        }
+
+        .cycle-dot.completed {
+            background: #556B2F;
+            border-color: #556B2F;
+        }
+
+        /* Botões */
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 40px;
+        }
+
+        button {
+            padding: 12px 30px;
+            font-size: 1em;
+            border: 2px solid #D4AF37;
+            background: linear-gradient(135deg, rgba(139, 0, 0, 0.4), rgba(102, 51, 153, 0.3));
+            color: #D4AF37;
+            cursor: pointer;
+            border-radius: 30px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            box-shadow: 0 5px 15px rgba(212, 175, 55, 0.2);
+        }
+
+        button:hover {
+            background: linear-gradient(135deg, rgba(139, 0, 0, 0.6), rgba(102, 51, 153, 0.5));
+            box-shadow: 0 8px 25px rgba(212, 175, 55, 0.4);
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.reset {
+            border-color: #8B0000;
+            color: #8B0000;
+        }
+
+        button.reset:hover {
+            background: rgba(139, 0, 0, 0.2);
+            box-shadow: 0 8px 25px rgba(139, 0, 0, 0.3);
+        }
+
+        /* Barra de progresso circular */
+        .progress-ring-container {
+            margin: 30px 0;
+            display: flex;
+            justify-content: center;
+        }
+
+        svg {
+            width: 180px;
+            height: 180px;
+            transform: rotate(-90deg);
+        }
+
+        .progress-ring {
+            transition: stroke-dashoffset 0.1s linear;
+        }
+
+        /* Efeito de conclusão */
+        .completion-pulse {
+            animation: pulse-ring 0.6s ease-out;
+        }
+
+        @keyframes pulse-ring {
+            0% {
+                r: 80;
+                opacity: 1;
+            }
+            100% {
+                r: 120;
+                opacity: 0;
+            }
+        }
+
+        /* Responsivo */
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .timer-display {
+                font-size: 3em;
+                letter-spacing: 4px;
+            }
+
+            .controls {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+
+            .lantern-top-left, .lantern-top-right {
+                display: none;
+            }
+        }
+
+        /* Efeito de flash ao completar */
+        .flash {
+            animation: screen-flash 0.3s ease-out;
+        }
+
+        @keyframes screen-flash {
+            0% {
+                box-shadow: inset 0 0 50px rgba(212, 175, 55, 0.5);
+            }
+            100% {
+                box-shadow: inset 0 0 50px rgba(212, 175, 55, 0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Background Water -->
+    <div class="background-water"></div>
+
+    <!-- Container Principal -->
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>千と千尋</h1>
+            <p>A Jornada de Foco</p>
+        </div>
+
+        <!-- Card Principal -->
+        <div class="card">
+            <!-- Lanternas -->
+            <div class="lantern-top-left"></div>
+            <div class="lantern-top-right"></div>
+
+            <!-- Status -->
+            <div class="status" id="status">Pronto para começar</div>
+
+            <!-- Label do Timer -->
+            <div class="timer-label" id="timerLabel">Trabalho</div>
+
+            <!-- Progress Ring -->
+            <div class="progress-ring-container">
+                <svg>
+                    <circle cx="90" cy="90" r="80" fill="none" stroke="rgba(212, 175, 55, 0.2)" stroke-width="4"/>
+                    <circle id="progressCircle" cx="90" cy="90" r="80" fill="none" stroke="#D4AF37" stroke-width="4"
+                            class="progress-ring" stroke-dasharray="502.65" stroke-dashoffset="502.65" stroke-linecap="round"/>
+                </svg>
+            </div>
+
+            <!-- Timer Display -->
+            <div class="timer-display" id="timerDisplay">25:00</div>
+
+            <!-- Cycles Progress -->
+            <div class="cycles-progress" id="cyclesProgress">
+                <div class="cycle-dot active" onclick="goToCycle(0)"></div>
+                <div class="cycle-dot" onclick="goToCycle(1)"></div>
+                <div class="cycle-dot" onclick="goToCycle(2)"></div>
+                <div class="cycle-dot" onclick="goToCycle(3)"></div>
+                <div class="cycle-dot" onclick="goToCycle(4)"></div>
+            </div>
+
+            <!-- Controles -->
+            <div class="controls">
+                <button id="startBtn" onclick="toggleTimer()">Começar</button>
+                <button id="resetBtn" class="reset" onclick="resetTimer()">Resetar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configurações
+        const WORK_TIME = 25 * 60; // 25 minutos
+        const BREAK_TIME = 5 * 60; // 5 minutos
+        const CYCLES = 5;
+
+        // Estado
+        let timeLeft = WORK_TIME;
+        let isRunning = false;
+        let isWorkTime = true;
+        let currentCycle = 0;
+        let timerInterval = null;
+
+        // Elementos DOM
+        const timerDisplay = document.getElementById('timerDisplay');
+        const startBtn = document.getElementById('startBtn');
+        const timerLabel = document.getElementById('timerLabel');
+        const status = document.getElementById('status');
+        const progressCircle = document.getElementById('progressCircle');
+        const cyclesProgress = document.getElementById('cyclesProgress');
+
+        // Circunferência do círculo
+        const radius = 80;
+        const circumference = 2 * Math.PI * radius;
+        progressCircle.style.strokeDasharray = `${circumference}`;
+
+        // Inicializar partículas
+        function createParticles() {
+            setInterval(() => {
+                const particle = document.createElement('div');
+                particle.className = 'particle particle-small particle-float';
+
+                const x = Math.random() * window.innerWidth;
+                const y = window.innerHeight;
+
+                particle.style.left = x + 'px';
+                particle.style.top = y + 'px';
+                document.body.appendChild(particle);
+
+                setTimeout(() => particle.remove(), 6000);
+            }, 200);
+        }
+
+        // Atualizar display do timer
+        function updateDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+            // Atualizar progresso circular
+            const totalTime = isWorkTime ? WORK_TIME : BREAK_TIME;
+            const progress = (totalTime - timeLeft) / totalTime;
+            const offset = circumference * (1 - progress);
+            progressCircle.style.strokeDashoffset = offset;
+        }
+
+        // Toggle start/pause
+        function toggleTimer() {
+            isRunning = !isRunning;
+            startBtn.textContent = isRunning ? 'Pausar' : 'Retomar';
+
+            if (isRunning) {
+                timerInterval = setInterval(() => {
+                    timeLeft--;
+                    updateDisplay();
+
+                    if (timeLeft <= 0) {
+                        completePhase();
+                    }
+                }, 1000);
+            } else {
+                clearInterval(timerInterval);
+            }
+        }
+
+        // Completar fase (trabalho ou pausa)
+        function completePhase() {
+            clearInterval(timerInterval);
+            isRunning = false;
+
+            // Play sound effect
+            playSound();
+
+            // Flash animation
+            document.querySelector('.card').classList.add('flash');
+            setTimeout(() => document.querySelector('.card').classList.remove('flash'), 300);
+
+            if (isWorkTime) {
+                // Passou do trabalho para pausa
+                isWorkTime = false;
+                timeLeft = BREAK_TIME;
+                timerLabel.textContent = 'Pausa';
+                status.textContent = `Ciclo ${currentCycle + 1}/${CYCLES} - Descanse um pouco!`;
+                startBtn.textContent = 'Retomar';
+            } else {
+                // Passou de pausa para trabalho
+                currentCycle++;
+
+                if (currentCycle >= CYCLES) {
+                    // Completou todos os ciclos
+                    completeSession();
+                    return;
+                }
+
+                isWorkTime = true;
+                timeLeft = WORK_TIME;
+                timerLabel.textContent = 'Trabalho';
+                status.textContent = `Ciclo ${currentCycle + 1}/${CYCLES} - Vamos trabalhar!`;
+                updateCycleDots();
+                startBtn.textContent = 'Retomar';
+            }
+
+            updateDisplay();
+        }
+
+        // Completar sessão
+        function completeSession() {
+            status.textContent = '🎉 Sessão completa! Excelente trabalho!';
+            timerLabel.textContent = 'Completo';
+            startBtn.textContent = 'Começar';
+            playSound();
+
+            // Disable buttons
+            startBtn.disabled = true;
+        }
+
+        // Resetar timer
+        function resetTimer() {
+            clearInterval(timerInterval);
+            isRunning = false;
+            isWorkTime = true;
+            currentCycle = 0;
+            timeLeft = WORK_TIME;
+
+            startBtn.textContent = 'Começar';
+            startBtn.disabled = false;
+            timerLabel.textContent = 'Trabalho';
+            status.textContent = 'Pronto para começar';
+
+            updateDisplay();
+            updateCycleDots();
+        }
+
+        // Atualizar dots dos ciclos
+        function updateCycleDots() {
+            const dots = document.querySelectorAll('.cycle-dot');
+            dots.forEach((dot, index) => {
+                dot.classList.remove('active', 'completed');
+                if (index === currentCycle) {
+                    dot.classList.add('active');
+                } else if (index < currentCycle) {
+                    dot.classList.add('completed');
+                }
+            });
+        }
+
+        // Ir para um ciclo específico
+        function goToCycle(cycle) {
+            if (!isRunning && cycle <= currentCycle + (isWorkTime ? 0 : 1)) {
+                clearInterval(timerInterval);
+                isRunning = false;
+                currentCycle = cycle;
+                isWorkTime = true;
+                timeLeft = WORK_TIME;
+
+                startBtn.textContent = 'Começar';
+                timerLabel.textContent = 'Trabalho';
+                status.textContent = `Ciclo ${currentCycle + 1}/${CYCLES}`;
+
+                updateDisplay();
+                updateCycleDots();
+            }
+        }
+
+        // Sound effect
+        function playSound() {
+            // Criar um simple beep usando Web Audio API
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.frequency.value = 800;
+            oscillator.type = 'sine';
+
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.5);
+        }
+
+        // Drag and drop para imagem de fundo
+        document.body.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            document.body.style.opacity = '0.8';
+        });
+
+        document.body.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            document.body.style.opacity = '1';
+        });
+
+        document.body.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            document.body.style.opacity = '1';
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const file = files[0];
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        document.body.style.backgroundImage = `url('${event.target.result}')`;
+                        document.body.classList.add('has-background');
+
+                        // Salvar em localStorage
+                        localStorage.setItem('pomodoroBackground', event.target.result);
+
+                        status.textContent = '✨ Imagem de fundo adicionada!';
+                        setTimeout(() => {
+                            status.textContent = isRunning ? '' : 'Pronto para começar';
+                        }, 2000);
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    status.textContent = '❌ Por favor, solte uma imagem!';
+                }
+            }
+        });
+
+        // Carregar background salvo
+        const savedBackground = localStorage.getItem('pomodoroBackground');
+        if (savedBackground) {
+            document.body.style.backgroundImage = `url('${savedBackground}')`;
+            document.body.classList.add('has-background');
+        }
+
+        // Inicializar
+        updateDisplay();
+        createParticles();
+    </script>
+</body>
+</html>
